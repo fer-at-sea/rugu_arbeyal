@@ -1,5 +1,5 @@
 ---
-title: "Rugulopteryx okamurae"
+title: "Monitoring R. okamurae"
 subtitle: "Playa del Arbeyal"
 author: "Fernando García-González"
 date: "2026-04-30"
@@ -9,7 +9,7 @@ toc: true
 output-file: index.html
 code-fold: true
 ---
-# Muestreo 30 de Abril 2026
+## Muestreo 30 de Abril 2026
 Puntos de campo recogidos durante la bajamar con GPS Emlid Reach RS3. Tiempo de muestreo 45 min. Tiempo de análisis 1:30 h, código desarrollado con asistencia de GPT-5.3-Codex.
 
 ::: {layout-ncol=2}
@@ -19,7 +19,7 @@ Puntos de campo recogidos durante la bajamar con GPS Emlid Reach RS3. Tiempo de 
 :::
 
 
-## Polígono de arribazón
+### Polígono de arribazón
 Bordes aproximados de la zona afectada.
 
 ```{python }
@@ -177,7 +177,7 @@ m
 ```
 
 
-## Interpolación con % cobertura
+### Interpolación con % cobertura
 
 ```{python}
 import numpy as np
@@ -374,7 +374,7 @@ with rasterio.open(
 
 m_cover
 ```
-## Volumen aproximado
+### Volumen aproximado
 
 ```{python}
 thickness_cm = 5.0
@@ -391,7 +391,7 @@ print(f"Volumen aproximado: {volume_m3:,.2f} m3")
 ```
 ---
 
-# Evolución temporal
+## Evolución temporal
 Se tratará de seguir haciendo muestreos de manera oportunista cuando se observen arribazones.
 ```{python}
 import pandas as pd
