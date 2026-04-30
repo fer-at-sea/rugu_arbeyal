@@ -1,0 +1,428 @@
+---
+title: "Rugulopteryx okamurae"
+subtitle: "Playa del Arbeyal"
+author: "Fernando García-González"
+date: "2026-04-30"
+lang: es
+format: html
+code-fold: true
+---
+# Muestreo 30 de Abril 2026
+Puntos de campo recogidos durante la bajamar con GPS Emlid Reach RS3. Tiempo de muestreo 45 min. Tiempo de análisis 1:30 h, código desarrollado con asistencia de GPT-5.3-Codex.
+
+## Polígono de arribazón
+Bordes aproximados de la zona afectada.
+
+```{python }
+import pandas as pd
+import geopandas as gpd
+import folium
+from shapely.geometry import Polygon
+from pathlib import Path
+
+# Input CSV with geographic coordinates (Longitude/Latitude in EPSG:4326)
+csv_path = "field_data/rugu_arbeyal.csv"
+cover_csv = "field_data/rugu_arbeyal_cover.csv"
+
+# Load tabular data
+df = pd.read_csv(csv_path)
+df_cover = pd.read_csv(cover_csv)
+df_cover["cover_pct"] = pd.to_numeric(df_cover["Description"], errors="coerce")
+df_cover = df_cover.dropna(subset=["cover_pct", "Longitude", "Latitude"])
+df_cover = df_cover[df_cover["cover_pct"].between(0, 100, inclusive="both")].copy()
+
+# Build point GeoDataFrame directly in WGS84 (EPSG:4326)
+gdf_pts = gpd.GeoDataFrame(
+	df.copy(),
+	geometry=gpd.points_from_xy(df["Longitude"], df["Latitude"]),
+	crs="EPSG:4326",
+)
+
+gdf_cover = gpd.GeoDataFrame(
+	df_cover.copy(),
+	geometry=gpd.points_from_xy(df_cover["Longitude"], df_cover["Latitude"]),
+	crs="EPSG:4326",
+)
+
+# Build two polygons from point IDs:
+# polygon_1 uses points 1..27 (27 closes to 1)
+# polygon_2 uses points 28..127 (127 closes to 28)
+gdf_pts["point_id"] = pd.to_numeric(gdf_pts["Name"], errors="coerce")
+
+def build_polygon(point_min, point_max):
+	part = gdf_pts[
+		(gdf_pts["point_id"] >= point_min) & (gdf_pts["point_id"] <= point_max)
+	].sort_values("point_id")
+	coords = list(zip(part["Longitude"], part["Latitude"]))
+	if coords and coords[0] != coords[-1]:
+		coords.append(coords[0])
+	return Polygon(coords)
+
+poly_1 = build_polygon(1, 27)
+poly_2 = build_polygon(28, 127)
+
+gdf_poly = gpd.GeoDataFrame(
+	{"name": ["polygon_1", "polygon_2"]},
+	geometry=[poly_1, poly_2],
+	crs="EPSG:4326",
+)
+
+# Compute total area in square meters using projected CRS
+total_area_m2 = gdf_poly.to_crs(epsg=25830).area.sum()
+
+# Save polygons to GeoJSON in results folder
+results_dir = Path("results")
+results_dir.mkdir(parents=True, exist_ok=True)
+geojson_out = results_dir / "rugu_arbeyal_polygons.geojson"
+gdf_poly.to_file(geojson_out, driver="GeoJSON")
+
+# Build interactive Folium map centered on polygon centroid
+center = gdf_poly.geometry.iloc[0].centroid
+m = folium.Map(location=[center.y, center.x], zoom_start=18, tiles=None)
+
+folium.TileLayer(
+	tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+	attr="Tiles &copy; Esri",
+	name="Esri World Imagery",
+	overlay=False,
+	control=True,
+).add_to(m)
+
+# Add polygon
+folium.GeoJson(
+	gdf_poly.__geo_interface__,
+	name="Boundary polygon",
+	style_function=lambda _feature: {
+		"color": "red",
+		"weight": 3,
+		"fillColor": "red",
+		"fillOpacity": 0.1,
+	},
+).add_to(m)
+
+# Add boundary points
+for row in gdf_pts.itertuples():
+	point_name = getattr(row, "Name", "Unknown")
+	folium.CircleMarker(
+		location=[row.geometry.y, row.geometry.x],
+		radius=4,
+		color="black",
+		weight=1,
+		fill=True,
+		fill_color="yellow",
+		fill_opacity=1.0,
+		popup=f"Name: {point_name}",
+		tooltip=str(point_name),
+	).add_to(m)
+
+# Add % cover points
+for row in gdf_cover.itertuples():
+	folium.CircleMarker(
+		location=[row.geometry.y, row.geometry.x],
+		radius=4,
+		color="black",
+		weight=1,
+		fill=True,
+		fill_color="#2ca25f",
+		fill_opacity=1.0,
+		popup=f"Cobertura: {row.cover_pct:.1f}%",
+		tooltip=f"{row.cover_pct:.1f}%",
+	).add_to(m)
+
+# Zoom to polygon extent so all vertices are visible
+minx, miny, maxx, maxy = gdf_poly.total_bounds
+m.fit_bounds([[miny, minx], [maxy, maxx]])
+
+# Legend with red line symbol and total area label
+legend_html = f"""
+<div style="
+	position: fixed;
+	bottom: 20px;
+	left: 20px;
+	z-index: 1000;
+	background-color: white;
+	border: 1px solid #666;
+	border-radius: 6px;
+	padding: 10px 12px;
+	font-size: 14px;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+">
+	<div style="display: flex; align-items: center; gap: 8px;">
+		<span style="display: inline-block; width: 26px; border-top: 3px solid red;"></span>
+		<span><b>Área arribazón <br>{total_area_m2:,.2f} m2</b></span>
+	</div>
+	<div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+		<span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: yellow; border: 1px solid black;"></span>
+		<span><b>Bordes</b></span>
+	</div>
+	<div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+		<span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #2ca25f; border: 1px solid black;"></span>
+		<span><b>% cobertura</b></span>
+	</div>
+</div>
+"""
+m.get_root().html.add_child(folium.Element(legend_html))
+
+# Show map in Quarto
+m
+```
+
+
+# Interpolación con % cobertura
+
+```{python}
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+import folium
+import branca.colormap as bcm
+import warnings
+warnings.filterwarnings("ignore")
+from pathlib import Path
+from shapely.geometry import box
+from shapely import contains_xy
+from folium.raster_layers import ImageOverlay
+from matplotlib import cm
+
+# Inputs
+cover_csv = "field_data/rugu_arbeyal_cover.csv"
+poly_path = Path("results/rugu_arbeyal_polygons.geojson")
+pics_dir = Path("field_data/pictures")
+gps_csv = pics_dir / "photos_gps.csv"
+
+# Load cover points (Description column = percent cover)
+df_cover = pd.read_csv(cover_csv)
+df_cover["cover_pct"] = pd.to_numeric(df_cover["Description"], errors="coerce")
+df_cover = df_cover.dropna(subset=["cover_pct", "Longitude", "Latitude"])
+df_cover = df_cover[df_cover["cover_pct"].between(0, 100, inclusive="both")].copy()
+
+gdf_cover = gpd.GeoDataFrame(
+	df_cover.copy(),
+	geometry=gpd.points_from_xy(df_cover["Longitude"], df_cover["Latitude"]),
+	crs="EPSG:4326",
+)
+
+pics_data = pd.read_csv(gps_csv).to_dict(orient="records")
+
+def pic_html(filepath, filename):
+	img_path = str(filepath / filename)
+	return (
+		f'<div style="text-align:center">'
+		f'<b>{filename}</b><br>'
+		f'<img src="{img_path}" width="300" style="border-radius:4px; margin-top:4px;">'
+		f'</div>'
+	)
+
+# Load the two polygons created previously
+gdf_poly = gpd.read_file(poly_path)
+poly_union = gdf_poly.union_all()
+
+# Build bbox rectangle from polygon corners
+minx, miny, maxx, maxy = gdf_poly.total_bounds
+bbox_geom = box(minx, miny, maxx, maxy)
+gdf_bbox = gpd.GeoDataFrame({"name": ["bbox"]}, geometry=[bbox_geom], crs="EPSG:4326")
+
+# Interpolation grid over bbox
+nx, ny = 300, 300
+xv = np.linspace(minx, maxx, nx)
+yv = np.linspace(miny, maxy, ny)
+grid_x, grid_y = np.meshgrid(xv, yv)
+
+px = gdf_cover.geometry.x.to_numpy()
+py = gdf_cover.geometry.y.to_numpy()
+pz = gdf_cover["cover_pct"].to_numpy()
+
+# Natural neighbour interpolation (MetPy), with robust fallback
+try:
+	from metpy.interpolate import natural_neighbor_to_grid
+
+	grid_z = natural_neighbor_to_grid(px, py, pz, grid_x, grid_y)
+except Exception:
+	from scipy.interpolate import griddata
+
+	grid_z = griddata((px, py), pz, (grid_x, grid_y), method="linear")
+	nearest = griddata((px, py), pz, (grid_x, grid_y), method="nearest")
+	grid_z = np.where(np.isnan(grid_z), nearest, grid_z)
+
+# Clip interpolated raster to the polygons
+mask_inside = contains_xy(poly_union, grid_x, grid_y)
+grid_z_clip = np.where(mask_inside, grid_z, np.nan)
+
+# Covered area: total polygon area × mean cover fraction inside polygons
+total_poly_area_m2 = gdf_poly.to_crs(epsg=25830).area.sum()
+mean_cover_fraction = float(np.nanmean(grid_z_clip[mask_inside]) / 100)
+covered_area_m2 = total_poly_area_m2 * mean_cover_fraction
+
+# Prepare RGBA image for folium ImageOverlay
+vmin = float(np.nanmin(grid_z_clip))
+vmax = float(np.nanmax(grid_z_clip))
+norm = (grid_z_clip - vmin) / (vmax - vmin + 1e-12)
+rgba = cm.get_cmap("YlGn")(np.clip(norm, 0, 1))
+rgba[..., 3] = np.where(np.isnan(grid_z_clip), 0.0, 0.75)  # transparent outside polygon
+rgba_uint8 = (rgba * 255).astype(np.uint8)
+
+# Folium/ImageOverlay expects first row at the north side; flip Y to avoid vertical inversion
+rgba_uint8 = np.flipud(rgba_uint8)
+
+# Folium map
+center = [(miny + maxy) / 2.0, (minx + maxx) / 2.0]
+m_cover = folium.Map(location=center, zoom_start=18, tiles=None)
+
+folium.TileLayer(
+	tiles="CartoDB Positron",
+	name="CartoDB Positron",
+	overlay=False,
+	control=True,
+).add_to(m_cover)
+
+# Interpolated raster layer (already clipped)
+ImageOverlay(
+	image=rgba_uint8,
+	bounds=[[miny, minx], [maxy, maxx]],
+	name="Cobertura interpolada",
+	opacity=1,
+	interactive=False,
+).add_to(m_cover)
+
+# Polygon boundaries and bbox outline
+folium.GeoJson(
+	gdf_poly.__geo_interface__,
+	name="Poligonos",
+	style_function=lambda _f: {"color": "red", "weight": 2, "fillOpacity": 0},
+).add_to(m_cover)
+
+# Photo markers
+for pic in pics_data:
+	popup_html = pic_html(pics_dir, pic["file"])
+	folium.Marker(
+		location=[pic["lat"], pic["lon"]],
+		popup=folium.Popup(popup_html, max_width=320),
+		tooltip=pic["file"],
+		icon=folium.Icon(color="blue", icon="camera", prefix="fa"),
+	).add_to(m_cover)
+
+# Color legend for interpolated cover
+colormap = bcm.LinearColormap(
+	colors=["#ffffcc", "#78c679", "#006837"],
+	vmin=vmin,
+	vmax=vmax,
+	caption="Cobertura interpolada (%)",
+)
+colormap.add_to(m_cover)
+
+# HTML legend matching first map style
+legend_cover_html = f"""
+<div style="
+	position: fixed;
+	bottom: 20px;
+	left: 20px;
+	z-index: 1000;
+	background-color: white;
+	border: 1px solid #666;
+	border-radius: 6px;
+	padding: 10px 12px;
+	font-size: 14px;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+">
+	<div style="display: flex; align-items: center; gap: 8px;">
+		<span style="display: inline-block; width: 26px; border-top: 3px solid red;"></span>
+		<span><b>Área cubierta <br>{covered_area_m2:,.2f} m2</b></span>
+	</div>
+	<div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+		<span style="display: inline-block; width: 14px; height: 14px;
+			background: #4286f4; border-radius: 50%; border: 2px solid white;
+			box-shadow: 0 0 0 1px #4286f4;"></span>
+		<span><b>Fotografías (clic para ver)</b></span>
+	</div>
+</div>
+"""
+m_cover.get_root().html.add_child(folium.Element(legend_cover_html))
+
+folium.LayerControl().add_to(m_cover)
+
+m_cover.fit_bounds([[miny, minx], [maxy, maxx]])
+
+# Save interpolated raster as GeoTIFF in results/
+import rasterio
+from rasterio.transform import from_bounds
+from rasterio.crs import CRS
+
+results_dir = Path("results")
+results_dir.mkdir(parents=True, exist_ok=True)
+raster_out = results_dir / "rugu_arbeyal_cover_raster.tif"
+ny_r, nx_r = grid_z_clip.shape
+transform = from_bounds(minx, miny, maxx, maxy, nx_r, ny_r)
+grid_save = np.where(np.isnan(grid_z_clip), -9999.0, grid_z_clip).astype("float32")
+with rasterio.open(
+    raster_out, "w",
+    driver="GTiff", height=ny_r, width=nx_r,
+    count=1, dtype="float32",
+    crs=CRS.from_epsg(4326),
+    transform=transform,
+    nodata=-9999.0,
+) as dst:
+    dst.write(grid_save, 1)
+
+m_cover
+```
+# Volumen aproximado
+
+```{python}
+thickness_cm = 5.0
+thickness_m = thickness_cm / 100.0
+
+# Volume = covered area (m2) * average thickness (m)
+volume_m3 = covered_area_m2 * thickness_m
+volume_l = volume_m3 * 1000.0
+
+print(f"Área cubierta interpolada: {covered_area_m2:,.2f} m2")
+print(f"Grosor medio asumido: {thickness_cm:.1f} cm")
+print(f"Volumen aproximado: {volume_m3:,.2f} m3")
+
+```
+
+# Evolución temporal
+Se tratará de seguir haciendo muestreos de manera oportunista cuando se observen arribazones.
+```{python}
+import pandas as pd
+import plotly.express as px
+
+# First survey point (ready to append future campaigns)
+ts_df = pd.DataFrame(
+	{
+		"fecha": [pd.to_datetime("2026-04-30")],
+		"volumen_m3": [volume_m3],
+	}
+)
+
+fig = px.line(
+	ts_df,
+	x="fecha",
+	y="volumen_m3",
+	markers=True,
+	title=" ",
+	labels={"fecha": "Fecha", "volumen_m3": "Volumen (m3)"},
+)
+
+start_date = pd.to_datetime("2026-03-01")
+end_date = pd.to_datetime("2027-03-01")
+
+fig.update_traces(
+	line=dict(width=3),
+	marker=dict(size=10, color="#1f77b4"),
+	hovertemplate="Fecha: %{x|%b %Y}<br>Volumen: %{y:.2f} m3<extra></extra>",
+)
+fig.update_layout(
+	template="plotly_white",
+	hovermode="x unified",
+	xaxis=dict(
+		range=[start_date, end_date],
+		dtick="M1",
+		tickformat="%b %Y",
+		ticklabelmode="period",
+	),
+	yaxis=dict(rangemode="tozero"),
+)
+
+fig
+```
