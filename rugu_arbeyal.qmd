@@ -375,7 +375,7 @@ m_cover
 ### Volumen de arribazón aproximado
 
 ```{python}
-thickness_cm = 5.0
+thickness_cm = 3.0
 thickness_m = thickness_cm / 100.0
 
 volume_m3 = covered_area_m2 * thickness_m
