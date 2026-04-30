@@ -12,6 +12,13 @@ code-fold: true
 # Muestreo 30 de Abril 2026
 Puntos de campo recogidos durante la bajamar con GPS Emlid Reach RS3. Tiempo de muestreo 45 min. Tiempo de análisis 1:30 h, código desarrollado con asistencia de GPT-5.3-Codex.
 
+::: {layout-ncol=2}
+![](field_data/pictures/IMG_4856.jpg)
+
+![](field_data/pictures/IMG_4858.jpg)
+:::
+
+
 ## Polígono de arribazón
 Bordes aproximados de la zona afectada.
 
@@ -382,6 +389,7 @@ print(f"Grosor medio asumido: {thickness_cm:.1f} cm")
 print(f"Volumen aproximado: {volume_m3:,.2f} m3")
 
 ```
+---
 
 # Evolución temporal
 Se tratará de seguir haciendo muestreos de manera oportunista cuando se observen arribazones.
