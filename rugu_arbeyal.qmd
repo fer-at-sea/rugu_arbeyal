@@ -1,5 +1,5 @@
 ---
-title: "Monitoring R. okamurae"
+title: "Rugulopteryx okamurae"
 subtitle: "Playa del Arbeyal"
 author: "Fernando García-González"
 date: "2026-04-30"
@@ -40,7 +40,7 @@ df_cover["cover_pct"] = pd.to_numeric(df_cover["Description"], errors="coerce")
 df_cover = df_cover.dropna(subset=["cover_pct", "Longitude", "Latitude"])
 df_cover = df_cover[df_cover["cover_pct"].between(0, 100, inclusive="both")].copy()
 
-# Build point GeoDataFrame directly in WGS84 (EPSG:4326)
+# Build point GeoDataFrames 
 gdf_pts = gpd.GeoDataFrame(
 	df.copy(),
 	geometry=gpd.points_from_xy(df["Longitude"], df["Latitude"]),
@@ -53,9 +53,7 @@ gdf_cover = gpd.GeoDataFrame(
 	crs="EPSG:4326",
 )
 
-# Build two polygons from point IDs:
-# polygon_1 uses points 1..27 (27 closes to 1)
-# polygon_2 uses points 28..127 (127 closes to 28)
+# Build two polygons from point IDs
 gdf_pts["point_id"] = pd.to_numeric(gdf_pts["Name"], errors="coerce")
 
 def build_polygon(point_min, point_max):
@@ -241,7 +239,7 @@ px = gdf_cover.geometry.x.to_numpy()
 py = gdf_cover.geometry.y.to_numpy()
 pz = gdf_cover["cover_pct"].to_numpy()
 
-# Natural neighbour interpolation (MetPy), with robust fallback
+# Natural neighbour interpolation (MetPy)
 try:
 	from metpy.interpolate import natural_neighbor_to_grid
 
@@ -380,7 +378,6 @@ m_cover
 thickness_cm = 5.0
 thickness_m = thickness_cm / 100.0
 
-# Volume = covered area (m2) * average thickness (m)
 volume_m3 = covered_area_m2 * thickness_m
 volume_l = volume_m3 * 1000.0
 
@@ -397,7 +394,6 @@ Se tratará de seguir haciendo muestreos de manera oportunista cuando se observe
 import pandas as pd
 import plotly.express as px
 
-# First survey point (ready to append future campaigns)
 ts_df = pd.DataFrame(
 	{
 		"fecha": [pd.to_datetime("2026-04-30")],
