@@ -5,6 +5,7 @@ author: "Fernando García-González"
 date: "2026-04-30"
 lang: es
 format: html
+toc: true
 output-file: index.html
 code-fold: true
 ---
@@ -169,7 +170,7 @@ m
 ```
 
 
-# Interpolación con % cobertura
+## Interpolación con % cobertura
 
 ```{python}
 import numpy as np
@@ -366,7 +367,7 @@ with rasterio.open(
 
 m_cover
 ```
-# Volumen aproximado
+## Volumen aproximado
 
 ```{python}
 thickness_cm = 5.0
