@@ -5,6 +5,7 @@ author: "Fernando García-González"
 date: "2026-04-30"
 lang: es
 format: html
+output-file: index.html
 code-fold: true
 ---
 # Muestreo 30 de Abril 2026
