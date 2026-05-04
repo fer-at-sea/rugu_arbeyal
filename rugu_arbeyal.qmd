@@ -8,9 +8,14 @@ format: html
 toc: true
 output-file: index.html
 code-fold: true
+bibliography: references.bib
 ---
-## Muestreo *[R. okamurae](https://www.miteco.gob.es/content/dam/miteco/es/biodiversidad/temas/conservacion-de-especies/mtjrugulopteryxokamurae_tcm30-523165.pdf)*
-Puntos de campo recogidos durante la bajamar del 30 de Abil de 2026 en la Playa el Arbeyal con GPS Emlid Reach RS3. Tiempo de muestreo 45 min. Tiempo de análisis 1:30 h, código desarrollado con asistencia de GPT-5.3-Codex.
+## Introducción
+*[Rugulopteryx okamurae](https://www.miteco.gob.es/content/dam/miteco/es/biodiversidad/temas/conservacion-de-especies/mtjrugulopteryxokamurae_tcm30-523165.pdf)*, también denominada alga asiática es una especie exótica incluida en el Catálogo español de especies exóticas invasoras[@miteco_rugulopteryx_catalogo]. Originaria de las costas asiáticas del Pacífico norte, este alga parda presenta un ciclo de vida digenético isomórfico, donde se alternan una fase gametofítica y una esporofítica morfológicamente idénticas, caracterizadas por talos acintados con ramificación dicótoma que pueden alcanzar hasta los 30 cm de altura. Su reproducción tiene lugar por mecanismos sexuales (gametos y tetrasporas), asexuales (monosporas mitóticas) y vegetativos (formación de propágulos). Es una especie marina, presente desde cubetas eulitorales hasta profundidades mayores de 30 m [@miteco_estrategia_2022], con potencial de asentamiento en las costas atlánticas [@santos_spread_2026].
+
+
+## Muestreo 30 de Abril de 2026
+Puntos de campo recogidos durante la bajamar en la Playa el Arbeyal con GPS Emlid Reach RS3. Tiempo de muestreo 45 min. Tiempo de análisis 1:30 h, código desarrollado con asistencia de GPT-5.3-Codex.
 
 ::: {layout-ncol=2}
 [![R. okamurae](field_data/pictures/IMG_4858.jpg)](https://www.miteco.gob.es/content/dam/miteco/es/biodiversidad/temas/conservacion-de-especies/mtjrugulopteryxokamurae_tcm30-523165.pdf)
