@@ -1,7 +1,9 @@
 ---
 title: "Rugulopteryx okamurae"
 subtitle: "Playa del Arbeyal"
-author: "Fernando García-González"
+author: 
+ - name: "Fernando García-González"
+   url: "https://fer-at-sea.github.io/"
 date: "2026-04-30"
 lang: es
 format: html
