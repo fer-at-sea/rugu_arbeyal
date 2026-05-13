@@ -4,7 +4,10 @@ subtitle: "Playa del Arbeyal"
 author: 
  - name: "Fernando García-González"
    url: "https://fer-at-sea.github.io/"
+ - name: "Ignasi Vallès-Casanova"
+   url: "https://ignasivalles.github.io"
 date: "2026-04-30"
+date-modified: last-modified
 lang: es
 format: html
 toc: true
@@ -380,7 +383,6 @@ with rasterio.open(
 m_cover
 ```
 ### Volumen de arribazón aproximado
-
 ```{python}
 thickness_cm = 3.0
 thickness_m = thickness_cm / 100.0
@@ -393,6 +395,15 @@ print(f"Grosor medio asumido: {thickness_cm:.1f} cm")
 print(f"Volumen aproximado: {volume_m3:,.2f} m3")
 
 ```
+
+### Condiciones de viento los días previos
+<iframe
+	src="field_data/wind_apr2025.html"
+	width="100%"
+	height="760"
+	style="border: 0; border-radius: 10px; overflow: hidden;"
+	loading="lazy"
+></iframe>
 ---
 
 ## Evolución temporal
